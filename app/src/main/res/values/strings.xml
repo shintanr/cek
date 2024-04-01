@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">GithubUsers</string>
+    <string name="title">Github Users List</string>
+    <string name="hint_searchbar">Search</string>
+    <string name="tab_text_1">Followers</string>
+    <string name="tab_text_2">Following</string>
+</resources>
