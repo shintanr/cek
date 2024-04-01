@@ -56,7 +56,7 @@ dependencies {
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("androidx.media3:media3-exoplayer-dash:1.3.0")
-    implementation("androidx.activity:activity:1.8.0")
+    implementation("androidx.activity:activity:1.8.2")
     implementation("androidx.datastore:datastore-core:1.0.0")
     testImplementation("junit:junit:4.13.2")
     implementation ("de.hdodenhof:circleimageview:3.1.0")

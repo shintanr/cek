@@ -1,6 +1,10 @@
+package com.shinta.githubapp.ui
+
 import android.content.Intent
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.View
+import android.view.inputmethod.EditorInfo
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
@@ -43,7 +47,7 @@ class MainActivity : AppCompatActivity() {
         mainViewModel = ViewModelProvider(this).get(MainViewModel::class.java)
         settingModeViewModel = ViewModelProvider(this, SettingModeModelFactory(
             SettingPreference.getInstance(application.dataStore)
-        )).get(SettingModeViewModel::class.java)
+        ))[SettingModeViewModel::class.java]
 
         // Initialize RecyclerView adapter
         adapter = UserAdapter()
@@ -92,18 +96,41 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupSearchFunctionality() {
         binding.searchView.setupWithSearchBar(binding.searchBar)
-        binding.searchView.editText.setOnEditorActionListener { _, _, _ ->
-            val searchText = binding.searchView.text.toString()
-            if (searchText.isNotEmpty()) {
-                CoroutineScope(Dispatchers.Main).launch {
-                    mainViewModel.findUsersBySearch(searchText)
+        binding.searchView.editText.setOnEditorActionListener { textView, actionId, event ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                val searchText = binding.searchView.text.toString()
+                if (searchText.isNotEmpty()) {
+                    binding.searchBar.setText(searchText)
+                    binding.searchView.hide()
+                    CoroutineScope(Dispatchers.Main).launch {
+                        mainViewModel.findUsersBySearch(searchText)
+                    }
+                    true
+                } else {
+                    showToast("Please enter a search query")
+                    false
                 }
-                true
-            } else {
-                showToast("Please enter a search query")
-                false
             }
+            false
         }
+
+
+        // Set up listener for search button in keyboard
+//        binding.searchView.editText.setOnKeyListener { _, keyCode, event ->
+//            if (event.action == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_ENTER) {
+//                val searchText = binding.searchView.text.toString()
+//                if (searchText.isNotEmpty()) {
+//                    CoroutineScope(Dispatchers.Main).launch {
+//                        mainViewModel.findUsersBySearch(searchText)
+//                    }
+//                    true
+//                } else {
+//                    showToast("Please enter a search query")
+//                    false
+//                }
+//            }
+//            false
+//        }
     }
 
     private fun setUserData(users: List<Users?>?) {

@@ -111,8 +111,8 @@ class DetailUserActivity : AppCompatActivity() {
     private fun setDataDetailUser(detailUser: DetailUserResponse){
         binding.tvUsernameDetail.text = detailUser.login
         binding.tvUsernameAlias.text = detailUser.name
-        binding.tvFollowing.text = "${detailUser.followers} Followers"
-        binding.tvFollowers.text = "${detailUser.following} Following"
+        binding.tvFollowers.text = "${detailUser.followers} Followers"
+        binding.tvFollowing.text = "${detailUser.following} Following"
 
         Glide.with(this).load(detailUser.avatarUrl).into(binding.avatarDetail)
     }

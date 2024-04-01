@@ -16,6 +16,7 @@ import com.shinta.githubapp.modelview.DetailUserViewModel
 
 class FollowersFragment : Fragment() {
 
+    private val viewModel: DetailUserViewModel by viewModels()
     private lateinit var binding: FragmentFollowersBinding
     private lateinit var username: String
 
@@ -27,10 +28,11 @@ class FollowersFragment : Fragment() {
 
         binding.rvFollowersUser.layoutManager = LinearLayoutManager(requireActivity())
 
-        val factory: ViewModelFactory = ViewModelFactory.getInstance(requireContext())
-        val viewModel: DetailUserViewModel by viewModels {
-            factory
-        }
+//        val factory: ViewModelFactory = ViewModelFactory.getInstance(requireContext())
+//        val viewModel: DetailUserViewModel by viewModels {
+//            factory
+//        }
+
 
         val recycleView = binding.rvFollowersUser
         val adapter = UserAdapter()
