@@ -7,6 +7,7 @@ import com.shinta.githubapp.modelview.DetailUserViewModel
 import com.shinta.githubapp.modelview.FavAddUpdateViewModel
 import com.shinta.githubapp.modelview.FavUserViewModel
 
+
 class ViewModelFactory private constructor(private val mApplication: Application) : ViewModelProvider.NewInstanceFactory() {
     companion object {
         @Volatile

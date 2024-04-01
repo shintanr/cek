@@ -1,16 +1,13 @@
-package com.shinta.githubapp.ui
-
-
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.android.material.search.SearchBar
 import com.shinta.githubapp.R
 import com.shinta.githubapp.adapter.UserAdapter
 import com.shinta.githubapp.data.response.Users
@@ -20,24 +17,43 @@ import com.shinta.githubapp.helper.SettingPreference
 import com.shinta.githubapp.helper.dataStore
 import com.shinta.githubapp.modelview.MainViewModel
 import com.shinta.githubapp.modelview.SettingModeViewModel
+import com.shinta.githubapp.ui.FavoriteActivity
+import com.shinta.githubapp.ui.SettingModeActivity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-
+    private lateinit var mainViewModel: MainViewModel
+    private lateinit var settingModeViewModel: SettingModeViewModel
+    private lateinit var adapter: UserAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-
-        supportActionBar?.hide()
-
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Hide the action bar
+        supportActionBar?.hide()
 
-        val mainViewModel = ViewModelProvider(this, ViewModelProvider.NewInstanceFactory()).get(MainViewModel::class.java)
+        // Initialize ViewModel instances
+        mainViewModel = ViewModelProvider(this).get(MainViewModel::class.java)
+        settingModeViewModel = ViewModelProvider(this, SettingModeModelFactory(
+            SettingPreference.getInstance(application.dataStore)
+        )).get(SettingModeViewModel::class.java)
+
+        // Initialize RecyclerView adapter
+        adapter = UserAdapter()
+        binding.rvUser.adapter = adapter
+
+        // Set up RecyclerView layout manager and item decoration
+        binding.rvUser.layoutManager = LinearLayoutManager(this)
+        binding.rvUser.addItemDecoration(DividerItemDecoration(this, LinearLayoutManager.VERTICAL))
+
+        // Observe LiveData from ViewModel and update UI accordingly
         mainViewModel.users.observe(this) { users ->
             setUserData(users.items)
         }
@@ -46,52 +62,21 @@ class MainActivity : AppCompatActivity() {
             setUserData(userData)
         }
 
-        mainViewModel.isLoading.observe(this) {
-            showLoading(it)
+        mainViewModel.isLoading.observe(this) { isLoading ->
+            showLoading(isLoading)
         }
 
-        val pref = SettingPreference.getInstance(application.dataStore)
-        val settingModeViewModel = ViewModelProvider(this, SettingModeModelFactory(pref)).get(
-            SettingModeViewModel::class.java)
-
-        val layoutManager = LinearLayoutManager(this)
-        binding.rvUser.layoutManager = layoutManager
-        val itemDecoration = DividerItemDecoration(this, layoutManager.orientation)
-        binding.rvUser.addItemDecoration(itemDecoration)
-
-        settingModeViewModel.getThemeSettings().observe(this) { isDarkModeActive: Boolean ->
-            if (isDarkModeActive) {
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-            } else {
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-            }
-            updateMenuIconTint(isDarkModeActive)
-        }
-        with(binding) {
-            searchView.setupWithSearchBar(searchBar)
-            searchView
-                .editText
-                .setOnEditorActionListener { textView, actionId, event ->
-                    val searchText = searchView.text.toString()
-                    if (searchText.isNotEmpty()) {
-                        searchBar.setText(searchText)
-                        searchView.hide()
-                        mainViewModel.findUsersBySearch(searchText)
-                        false
-                    } else {
-                        Toast.makeText(
-                            this@MainActivity,
-                            "Please enter a search query",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        true
-                    }
-                }
+        // Observe dark mode setting changes
+        settingModeViewModel.getThemeSettings().observe(this) { isDarkModeActive ->
+            updateDarkMode(isDarkModeActive)
         }
 
-        val searchBar = findViewById<SearchBar>(R.id.searchBar)
-        searchBar.setOnMenuItemClickListener { item ->
-            when (item.itemId) {
+        // Set up search functionality
+        setupSearchFunctionality()
+
+        // Set up click listeners for menu items
+        binding.searchBar.setOnMenuItemClickListener { menuItem ->
+            when (menuItem.itemId) {
                 R.id.menu_favorite -> {
                     openFavoriteActivity()
                     true
@@ -105,40 +90,51 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun openModeSettingActivity() {
-        val intent = Intent(this, SettingModeActivity::class.java)
-        startActivity(intent)
-    }
-
-    private fun openFavoriteActivity() {
-        val intent = Intent(this, FavoriteActivity::class.java)
-        startActivity(intent)
+    private fun setupSearchFunctionality() {
+        binding.searchView.setupWithSearchBar(binding.searchBar)
+        binding.searchView.editText.setOnEditorActionListener { _, _, _ ->
+            val searchText = binding.searchView.text.toString()
+            if (searchText.isNotEmpty()) {
+                CoroutineScope(Dispatchers.Main).launch {
+                    mainViewModel.findUsersBySearch(searchText)
+                }
+                true
+            } else {
+                showToast("Please enter a search query")
+                false
+            }
+        }
     }
 
     private fun setUserData(users: List<Users?>?) {
-
-        val adapter = UserAdapter()
         adapter.submitList(users)
-        binding.rvUser.adapter = adapter
     }
 
-    private fun showLoading(state: Boolean) {
-        binding.progressBar.visibility = if(state) View.VISIBLE else View.GONE
+    private fun showLoading(isLoading: Boolean) {
+        binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+    }
+
+    private fun updateDarkMode(isDarkModeActive: Boolean) {
+        val mode = if (isDarkModeActive) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_NO
+        AppCompatDelegate.setDefaultNightMode(mode)
+        updateMenuIconTint(isDarkModeActive)
     }
 
     private fun updateMenuIconTint(isDarkModeActive: Boolean) {
-        val menu = binding.searchBar.menu
-        val favoriteMenuItem = menu.findItem(R.id.menu_favorite)
-        val modeMenuItem = menu.findItem(R.id.menuMode)
-
-        val tint = if (isDarkModeActive) {
-            resources.getColor(R.color.white, theme)
-        } else {
-            resources.getColor(R.color.black, theme)
-        }
-
-        favoriteMenuItem.icon?.setTint(tint)
-        modeMenuItem.icon?.setTint(tint)
+        val tint = if (isDarkModeActive) R.color.white else R.color.black
+        binding.searchBar.menu.findItem(R.id.menu_favorite)?.icon?.setTint(ContextCompat.getColor(this, tint))
+        binding.searchBar.menu.findItem(R.id.menuMode)?.icon?.setTint(ContextCompat.getColor(this, tint))
     }
 
+    private fun openFavoriteActivity() {
+        startActivity(Intent(this, FavoriteActivity::class.java))
+    }
+
+    private fun openModeSettingActivity() {
+        startActivity(Intent(this, SettingModeActivity::class.java))
+    }
+
+    private fun showToast(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
 }

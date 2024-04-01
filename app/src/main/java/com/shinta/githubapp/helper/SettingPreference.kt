@@ -29,11 +29,10 @@ class SettingPreference private constructor(private val dataStore: DataStore<Pre
     }
 
     fun getThemeSetting(): Flow<Boolean> {
-        return dataStore.data.map { preferences ->
+        return dataStore.data.map { preferences: Preferences ->
             preferences[THEME_KEY] ?: false
         }
     }
-
     suspend fun saveThemeSetting(isDarkModeActive: Boolean) {
         dataStore.edit { preferences ->
             preferences[THEME_KEY] = isDarkModeActive

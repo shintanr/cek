@@ -5,14 +5,17 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.lifecycle.ViewModelProvider
+import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.shinta.githubapp.adapter.FollowAdapter
+import com.shinta.githubapp.adapter.UserAdapter
 import com.shinta.githubapp.data.response.FollowingFollowersResponseItem
+import com.shinta.githubapp.databinding.FragmentFollowersBinding
 import com.shinta.githubapp.databinding.FragmentFollowingBinding
+import com.shinta.githubapp.helper.ViewModelFactory
 import com.shinta.githubapp.modelview.DetailUserViewModel
 
-class FollowingFragment: Fragment() {
+class FollowingFragment : Fragment() {
 
     private lateinit var binding: FragmentFollowingBinding
     private lateinit var username: String
@@ -25,18 +28,23 @@ class FollowingFragment: Fragment() {
 
         binding.rvFollowingUser.layoutManager = LinearLayoutManager(requireActivity())
 
-        val detailUserViewModel = ViewModelProvider(
-            this,
-            ViewModelProvider.NewInstanceFactory()
-        ).get(DetailUserViewModel::class.java)
+        val factory: ViewModelFactory = ViewModelFactory.getInstance(requireContext())
+        val viewModel: DetailUserViewModel by viewModels {
+            factory
+        }
 
-        detailUserViewModel.getFollowingUser(username)
+        val recycleView = binding.rvFollowingUser
+        val adapter = UserAdapter()
+        recycleView.layoutManager = LinearLayoutManager(requireContext())
+        recycleView.adapter = adapter
 
-        detailUserViewModel.followingResponse.observe(viewLifecycleOwner) { following ->
+        viewModel.getFollowingUser(username)
+
+        viewModel.followingResponse.observe(viewLifecycleOwner) { following ->
             setFollowingData(following)
         }
 
-        detailUserViewModel.isLoading.observe(viewLifecycleOwner) {
+        viewModel.isLoading.observe(viewLifecycleOwner) {
             showLoading(it)
         }
     }

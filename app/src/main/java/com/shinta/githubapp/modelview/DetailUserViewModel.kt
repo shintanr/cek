@@ -17,6 +17,7 @@ import retrofit2.Callback
 import retrofit2.Response
 
 class DetailUserViewModel(application: Application) : AndroidViewModel(application) {
+
     private val _detailUser = MutableLiveData<DetailUserResponse>()
     val detailUser: LiveData<DetailUserResponse> = _detailUser
 
@@ -119,5 +120,15 @@ class DetailUserViewModel(application: Application) : AndroidViewModel(applicati
                 Log.e(TAG, "failure: ${t.message}")
             }
         })
+    }
+
+    fun insert(favorite: FavoriteUser) {
+        mFavoriteRepository.insert(favorite)
+    }
+    fun delete(favorite: FavoriteUser) {
+        mFavoriteRepository.delete(favorite)
+    }
+    fun getFavoriteUserByUsername(username: String): LiveData<FavoriteUser> {
+        return mFavoriteRepository.getFavoriteUserByUsername(username)
     }
 }
